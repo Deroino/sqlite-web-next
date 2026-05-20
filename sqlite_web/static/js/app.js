@@ -109,9 +109,16 @@ App = window.App || {};
         });
 
         /* Initialize focus on SQL textarea. */
-        var sqlTextarea = $('textarea#sql');
+        var sqlTextarea = $('textarea[name="sql"]');
         if (sqlTextarea.length > 0) {
             sqlTextarea.focus();
+        }
+
+        /* Initialize SQL history dropdown on all pages. */
+        var historyDropdown = $('#sql-history-dropdown');
+        if (historyDropdown.length > 0) {
+            var recent = new Recent();
+            recent.initialize();
         }
     };
 
@@ -232,7 +239,7 @@ App = window.App || {};
 
     Recent.prototype.initialize = function() {
         this.sqlTextarea = $('textarea[name="sql"]');
-        this.form = this.sqlTextarea.parents('form');
+        this.form = this.sqlTextarea.length ? this.sqlTextarea.parents('form') : null;
         this.entries = [];
         this.bindHandlers();
         this.fetchHistory();
@@ -278,9 +285,27 @@ App = window.App || {};
                 e.preventDefault();
                 e.stopPropagation();
                 var idx = $(this).data('index');
-                self.sqlTextarea.val(self.entries[idx].sql);
-                self.sqlTextarea.focus();
-                $('#sql-history-dropdown').dropdown('toggle');
+                if (self.sqlTextarea.length) {
+                    self.sqlTextarea.val(self.entries[idx].sql);
+                    self.sqlTextarea.focus();
+                    $('#sql-history-dropdown').dropdown('toggle');
+                } else {
+                    window.location.href = '/query/?sql=' + encodeURIComponent(self.entries[idx].sql);
+                }
+            });
+
+            // Click on the item itself also fills the textarea
+            elem.on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var idx = $(this).find('.btn-fill').data('index');
+                if (self.sqlTextarea.length) {
+                    self.sqlTextarea.val(self.entries[idx].sql);
+                    self.sqlTextarea.focus();
+                    $('#sql-history-dropdown').dropdown('toggle');
+                } else {
+                    window.location.href = '/query/?sql=' + encodeURIComponent(self.entries[idx].sql);
+                }
             });
 
             container.append(elem);
@@ -295,11 +320,13 @@ App = window.App || {};
 
     Recent.prototype.bindHandlers = function() {
         var self = this;
-        this.sqlTextarea.on('keydown', function(e) {
-            if ((e.metaKey || e.ctrlKey) && e.keyCode == 13) { // ctrl+enter or meta+enter.
-                self.form.submit();
-            }
-        });
+        if (this.sqlTextarea.length) {
+            this.sqlTextarea.on('keydown', function(e) {
+                if ((e.metaKey || e.ctrlKey) && e.keyCode == 13) { // ctrl+enter or meta+enter.
+                    self.form.submit();
+                }
+            });
+        }
     };
 
     exports.initialize = initialize;

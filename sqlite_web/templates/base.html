@@ -53,22 +53,28 @@
         <span class="navbar-text mr-auto">{% block content_title %}{% endblock %}</span>
         {% if dataset.is_readonly %}
           <a class="btn btn-sm btn-secondary" href="{{ url_for('generic_query') }}">Query</a>
+          <div class="btn-group ml-2">
+            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="SQL Execute History">
+              History
+            </button>
+            <div class="dropdown-menu dropdown-menu-right" id="sql-history-dropdown" style="max-height: 400px; overflow-y: auto;">
+            </div>
+          </div>
         {% else %}
           <form action="{{ url_for('table_create') }}" class="form-inline" method="post">
             <input name="redirect" type="hidden" value="{{ request.full_path }}" />
             <input class="form-control form-control-sm" name="table_name" placeholder="new_table_name" />
             <button class="btn btn-primary btn-sm" type="submit">Create</button>
-            &nbsp;
             <a class="btn btn-sm btn-secondary" href="{{ url_for('generic_query') }}">Query</a>
+            <div class="btn-group ml-2">
+              <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="SQL Execute History">
+                History
+              </button>
+              <div class="dropdown-menu dropdown-menu-right" id="sql-history-dropdown" style="max-height: 400px; overflow-y: auto;">
+              </div>
+            </div>
           </form>
         {% endif %}
-        <div class="btn-group ml-2">
-          <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="SQL Execute History">
-            History
-          </button>
-          <div class="dropdown-menu dropdown-menu-right" id="sql-history-dropdown" style="max-height: 400px; overflow-y: auto; min-width: 200px; max-width: calc(100vw - 2rem);">
-          </div>
-        </div>
         {% if datasets|length() > 1 and (enable_load or enable_filesystem) %}
           <a class="btn btn-sm btn-danger" href="{{ url_for('unload') }}?dataset={{ dataset.basename }}" style="margin-left: 3px;">Unload Database</a>
         {% endif %}

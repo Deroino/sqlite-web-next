@@ -21,6 +21,10 @@ ul.pagination .page-item.disabled .page-link {
 }
 
 /* SQL History Dropdown */
+#sql-history-dropdown {
+    min-width: 220px;
+    max-width: min(400px, calc(100vw - 2rem));
+}
 .sql-history-text {
     font-family: monospace;
     font-size: 0.85rem;
@@ -30,19 +34,47 @@ ul.pagination .page-item.disabled .page-link {
 .sql-history-meta {
     color: #6c757d;
     font-size: 0.75rem;
+    display: block;
 }
 .sql-history-item {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    padding: 6px 8px;
+    cursor: pointer;
+}
+.sql-history-item:hover {
+    background-color: #f8f9fa;
 }
 .sql-history-actions {
     display: flex;
     gap: 4px;
-    margin-top: 2px;
+    margin-top: 4px;
+}
+.sql-history-actions .btn {
+    font-size: 0.7rem;
+    padding: 1px 6px;
 }
 .sql-history-actions .btn-run {
     text-decoration: none;
+}
+
+@media (max-width: 575.98px) {
+    #sql-history-dropdown {
+        position: fixed !important;
+        left: 8px !important;
+        right: 8px !important;
+        top: auto !important;
+        bottom: 0 !important;
+        max-width: none;
+        width: auto;
+        max-height: 60vh !important;
+        border-radius: 8px 8px 0 0;
+        transform: none !important;
+    }
+    .sql-history-text {
+        font-size: 0.78rem;
+    }
 }
 
 /* Mobile responsive styles */
