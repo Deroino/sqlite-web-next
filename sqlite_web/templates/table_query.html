@@ -12,7 +12,7 @@
       /* Recent queries and bookmarks. */
       var sql = {% if sql and not error %}`{{ sql }}`{% else %}''{% endif %};
       var Recent = new App.Recent();
-      Recent.initialize(sql);
+      Recent.initialize();
 
       var bookmarks = new App.Bookmarks();
       bookmarks.initialize();
@@ -37,7 +37,7 @@
     <input name="export_ordering" type="hidden" value="{% if ordering %}{{ ordering }}{% endif %}" />
     <div class="form-group{% if error %} has-error has-feedback{% endif %}">
       <textarea class="form-control remember-size{% if error %} is-invalid{% endif %}" id="table-sql" name="sql" style="height: 120px;">{% if sql %}{{ sql }}{% else %}{{ default_sql }}{% endif %}</textarea>
-      <small class="form-text text-muted">Use Shift + Up/Down to navigate recently-executed queries</small>
+      <small class="form-text text-muted">Use Ctrl+Enter or Cmd+Enter to execute query. Click History button for recent queries.</small>
       {% if error %}
         <div class="invalid-feedback">{{ error }}</div>
       {% endif %}

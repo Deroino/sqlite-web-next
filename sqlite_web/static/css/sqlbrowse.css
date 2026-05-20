@@ -19,3 +19,28 @@ ul.pagination .page-item.disabled .page-link {
     border-color: #dee2e6 !important;
     color: #aaa;
 }
+
+/* SQL History Dropdown */
+.sql-history-text {
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.2;
+    word-break: break-all;
+}
+.sql-history-meta {
+    color: #6c757d;
+    font-size: 0.75rem;
+}
+.sql-history-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.sql-history-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+}
+.sql-history-actions .btn-run {
+    text-decoration: none;
+}

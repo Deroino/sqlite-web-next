@@ -253,6 +253,82 @@ def get_dataset():
         g.dataset = datasets[dataset_key]
     return g.dataset
 
+import sqlite3 as _sqlite3
+
+_HISTORY_DB_PATH = os.path.join(tempfile.gettempdir(), 'sqlite_web_history.db')
+
+def _get_history_conn():
+    """Get a connection to the dedicated history database."""
+    conn = _sqlite3.connect(_HISTORY_DB_PATH)
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS query_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sql TEXT NOT NULL,
+            dataset TEXT,
+            result_count INTEGER,
+            error TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    return conn
+
+def _record_query_history(sql, result_count=None, error=None):
+    """Record a query execution in the history database."""
+    try:
+        conn = _get_history_conn()
+        conn.execute(
+            'INSERT INTO query_history (sql, dataset, result_count, error) VALUES (?, ?, ?, ?)',
+            (sql, session.get('dataset', ''), result_count, error)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as exc:
+        app.logger.warning('History recording failed: %s', exc)
+
+def _get_recent_history(limit=20):
+    """Get recent query history entries."""
+    try:
+        conn = _get_history_conn()
+        cursor = conn.execute(
+            'SELECT id, sql, dataset, result_count, error, timestamp FROM query_history ORDER BY id DESC LIMIT ?',
+            (limit,)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+    except Exception:
+        return []
+
+@app.route('/history/recent/')
+def history_recent():
+    """JSON API for recent query history (for dropdown)."""
+    entries = _get_recent_history(20)
+    result = []
+    for row in entries:
+        result.append({
+            'id': row[0],
+            'sql': row[1],
+            'dataset': row[2],
+            'result_count': row[3],
+            'error': row[4],
+            'timestamp': row[5],
+        })
+    return jsonify(result)
+
+@app.route('/history/delete/<int:entry_id>/', methods=['POST'])
+def history_delete(entry_id):
+    """Delete a history entry."""
+    try:
+        conn = _get_history_conn()
+        conn.execute('DELETE FROM query_history WHERE id = ?', (entry_id,))
+        conn.commit()
+        conn.close()
+        flash('History entry deleted.', 'success')
+    except Exception as exc:
+        flash('Error: %s' % str(exc), 'danger')
+    return redirect(request.referrer or url_for('generic_query'))
+
 #
 # Flask views.
 #
@@ -487,6 +563,10 @@ def _query_view(template, table=None):
         col_names = [r[0] for r in data_description]
         if pk and not is_composite_pk and pk.column_name in col_names:
             pk_index = col_names.index(pk.column_name)
+
+    # Record query in history
+    if sql:
+        _record_query_history(sql, row_count, error)
 
     return render_template(
         template,

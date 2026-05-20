@@ -230,41 +230,74 @@ App = window.App || {};
 
     Recent = function() {};
 
-    Recent.prototype.initialize = function(sql) {
+    Recent.prototype.initialize = function() {
         this.sqlTextarea = $('textarea[name="sql"]');
         this.form = this.sqlTextarea.parents('form');
-        this.queries = JSON.parse(localStorage.getItem('recentQueries') || '[]');
-        this.idx = 0;
-        if (sql) {
-            var accum = [sql];
-            for (var i = 0; i < this.queries.length; i++) {
-                if (this.queries[i] !== sql) { accum.push(this.queries[i]) };
-            }
-            this.queries = accum.slice(0, 50);
-            localStorage.setItem('recentQueries', JSON.stringify(this.queries));
+        this.entries = [];
+        this.bindHandlers();
+        this.fetchHistory();
+    }
+
+    Recent.prototype.fetchHistory = function() {
+        var self = this;
+        $.getJSON('/history/recent/', function(data) {
+            self.entries = data;
+            self.populateHistoryDropdown();
+        });
+    }
+
+    Recent.prototype.populateHistoryDropdown = function() {
+        var self = this;
+        var container = $('#sql-history-dropdown');
+        container.empty();
+        if (!container.length) return;
+
+        if (this.entries.length === 0) {
+            container.append('<div class="dropdown-item text-muted">No recent queries</div>');
+            return;
         }
 
-        this.bindHandlers();
+        for (var i = 0; i < this.entries.length; i++) {
+            var entry = this.entries[i];
+            var resultInfo = entry.result_count != null ? ' (' + entry.result_count + ' rows)' : '';
+            var errorBadge = entry.error ? '<span class="badge badge-danger mr-1">ERR</span>' : '';
+            var displaySql = entry.sql.length > 60 ? entry.sql.substring(0, 60) + '...' : entry.sql;
+            var escapedSql = escapeHtml(displaySql);
+            var tsDisplay = entry.timestamp ? ' \u2014 ' + entry.timestamp.substring(0, 16) : '';
+
+            var elem = $(
+                '<div class="dropdown-item sql-history-item">' +
+                '<div class="sql-history-text">' + errorBadge + escapedSql + '<small class="sql-history-meta">' + tsDisplay + resultInfo + '</small></div>' +
+                '<div class="sql-history-actions">' +
+                '<button class="btn btn-sm btn-outline-primary btn-fill" data-index="' + i + '">Fill</button>' +
+                '<a class="btn btn-sm btn-outline-secondary btn-run" href="/query/?sql=' + encodeURIComponent(entry.sql) + '">Run</a>' +
+                '</div></div>'
+            );
+
+            elem.find('.btn-fill').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var idx = $(this).data('index');
+                self.sqlTextarea.val(self.entries[idx].sql);
+                self.sqlTextarea.focus();
+                $('#sql-history-dropdown').dropdown('toggle');
+            });
+
+            container.append(elem);
+        }
+    };
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
     }
 
     Recent.prototype.bindHandlers = function() {
         var self = this;
         this.sqlTextarea.on('keydown', function(e) {
-            if ((e.metaKey || e.ctrlKey) && e.keyCode == 13) { // ctrl+enter or meta+enter.
+            if ((e.metaKey || e.ctrlKey) && e.keyCode == 13) { // ctrl+enter or meta+enter.
                 self.form.submit();
-            }
-            if (e.shiftKey) {
-                if (e.keyCode == 38) { // up.
-                    self.idx += 1;
-                    if (self.idx >= self.queries.length) { self.idx = 0; }
-                    self.sqlTextarea.html(self.queries[self.idx]);
-                    e.preventDefault();
-                } else if (e.keyCode == 40) { // down.
-                    self.idx -= 1;
-                    if (self.idx < 0) { self.idx = self.queries.length - 1; }
-                    self.sqlTextarea.html(self.queries[self.idx]);
-                    e.preventDefault();
-                }
             }
         });
     };
