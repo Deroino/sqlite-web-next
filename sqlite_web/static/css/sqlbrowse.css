@@ -44,3 +44,79 @@ ul.pagination .page-item.disabled .page-link {
 .sql-history-actions .btn-run {
     text-decoration: none;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 991.98px) {
+    /* Sidebar: full width on mobile */
+    #sidebar {
+        padding: 0 10px;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 10px;
+    }
+    #sidebar .nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+    #sidebar .nav>li>a {
+        padding: 4px 8px;
+        font-size: 0.85rem;
+    }
+    /* Sidebar toggle button */
+    .sidebar-toggle {
+        width: 100%;
+        text-align: left;
+    }
+    /* Content: full width on mobile */
+    #content {
+        padding: 0 10px;
+    }
+    /* Navbar form adjustments */
+    .navbar .form-inline {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .navbar .form-inline .form-control {
+        max-width: 100%;
+        width: 100%;
+    }
+    .navbar .btn-group.ml-2 {
+        margin-left: 0 !important;
+        margin-top: 4px;
+    }
+    /* Pagination: allow wrap on mobile */
+    .pagination {
+        flex-wrap: wrap;
+    }
+    /* Query form buttons: wrap on small screens */
+    #query-form .btn,
+    form .btn {
+        margin-bottom: 4px;
+    }
+    /* Float-right elements: no float on mobile */
+    .float-right {
+        float: none !important;
+        margin-bottom: 8px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    /* Extra small screens: tighter spacing */
+    h1 { font-size: 1.4rem; }
+    h1 small { font-size: .65rem; }
+    h3 { font-size: 1.1rem; }
+    /* Nav tabs: scrollable with smaller text */
+    .nav-tabs .nav-link {
+        font-size: 0.8rem;
+        padding: 6px 8px;
+        white-space: nowrap;
+    }
+    /* Tables: smaller font */
+    .table {
+        font-size: 0.75rem;
+    }
+    /* Footer: smaller */
+    footer p {
+        font-size: 0.75rem;
+    }
+}

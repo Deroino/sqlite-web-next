@@ -70,6 +70,7 @@
       <h3>
         Results ({% if total >= 0 %}{% if total_pages > 1 %}{{ page_start }}&ndash;{{ page_end }} of {% endif %}{{ total }}{% else %}unable to determine{% endif %})
       </h3>
+      <div class="table-responsive">
       <table class="table table-striped small cell-content">
         <thead>
           <tr>
@@ -92,6 +93,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% include "pagination.html" %}
     {% endif %}
   {% endif %}

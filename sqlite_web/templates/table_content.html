@@ -15,6 +15,7 @@
         <button class="btn btn-sm btn-danger bulk-action" disabled name="action" type="submit" value="bulk-delete">Bulk Delete</button>
       </div>
   {% endif %}
+  <div class="table-responsive">
   <table class="table table-striped small cell-content">
     <thead>
       <tr>
@@ -58,6 +59,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% if allow_bulk %}</form>{% endif %}
   <nav>
     <ul class="pagination">

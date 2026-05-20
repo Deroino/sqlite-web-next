@@ -12,6 +12,7 @@
     {% endif %}
     Columns
   </h3>
+  <div class="table-responsive">
   <table class="table table-striped">
     <thead>
       <tr>
@@ -46,10 +47,12 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   <hr />
 
   {% if foreign_keys %}
     <h3 id="foreign-keys">Foreign Keys</h3>
+    <div class="table-responsive">
     <table class="table table-striped">
       <thead>
         <tr>
@@ -66,6 +69,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     <hr />
   {% endif %}
 
@@ -76,6 +80,7 @@
     {% endif %}
     Indexes
   </h3>
+  <div class="table-responsive">
   <table class="table table-striped">
     <thead>
       <tr>
@@ -117,6 +122,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   <hr />
   {% endif %}
 
@@ -125,6 +131,7 @@
       {#<p class="float-right"><a class="btn btn-primary btn-sm" href="{{ url_for('add_trigger', table=table) }}">Add trigger</a></p>#}
       Triggers
     </h3>
+    <div class="table-responsive">
     <table class="table table-striped">
       <thead>
         <tr>
@@ -152,6 +159,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   {% endif %}
   <div class="modal fade" id="sql-modal">
     <div class="modal-dialog">

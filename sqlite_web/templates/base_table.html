@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-  <ul class="nav nav-tabs">
+  <ul class="nav nav-tabs flex-nowrap overflow-auto">
     <li class="nav-item">
       <a class="nav-link{% block structure_tab_class %}{% endblock %}" href="{{ url_for('table_structure', table=table) }}">Structure</a>
     </li>
