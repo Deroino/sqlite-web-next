@@ -1,133 +1,262 @@
+:root {
+  --sw-primary: #3b82f6;
+  --sw-primary-dark: #2563eb;
+  --sw-bg: #f8fafc;
+  --sw-sidebar-bg: #f1f5f9;
+  --sw-card-bg: #ffffff;
+  --sw-border: #e2e8f0;
+  --sw-text: #1e293b;
+  --sw-text-muted: #64748b;
+  --sw-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --sw-shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --sw-radius: 8px;
+  --sw-radius-sm: 4px;
+  --sw-transition: 0.15s ease;
+}
+
+/* === Base === */
+body {
+  background: var(--sw-bg);
+  color: var(--sw-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* === Navbar === */
 nav.primary-nav {
-    margin-bottom: 20px;
+  margin-bottom: 0;
+  box-shadow: var(--sw-shadow);
 }
 .navbar, .dropdown-item {
-    font-size: 0.9rem;
+  font-size: 0.9rem;
 }
-#sidebar .nav>li>a {padding: 3px 10px;}
-h1>small {font-size: 50%;}
+.navbar .btn svg {
+  vertical-align: middle;
+}
+
+/* === Sidebar === */
+#sidebar {
+  background: var(--sw-sidebar-bg);
+  border-right: 1px solid var(--sw-border);
+  padding: 16px 12px;
+  min-height: calc(100vh - 56px);
+}
+#sidebar .nav > li > a {
+  padding: 6px 12px;
+  border-radius: var(--sw-radius-sm);
+  color: var(--sw-text);
+  transition: background var(--sw-transition), color var(--sw-transition);
+}
+#sidebar .nav > li > a:hover,
+#sidebar .nav > li > a.active {
+  background: var(--sw-primary);
+  color: #fff;
+}
+
+/* === Content Area === */
+#content {
+  padding: 20px 24px;
+}
+
+/* === Card === */
+.sw-card {
+  background: var(--sw-card-bg);
+  border: 1px solid var(--sw-border);
+  border-radius: var(--sw-radius);
+  box-shadow: var(--sw-shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.sw-card .table {
+  margin-bottom: 0;
+}
+
+/* === Tables === */
+.table th {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--sw-text-muted);
+  border-bottom-width: 1px;
+}
+.table-striped tbody tr:hover {
+  background-color: #f0f7ff;
+}
 table.cell-content td,
 table.cell-content th {
-    padding: 1px 4px 1px 4px;
-    border: 1px dotted #cccccc;
+  padding: 4px 8px;
+  border: 1px solid var(--sw-border);
 }
+
+/* === Nav tabs === */
+.nav-tabs .nav-link {
+  border-radius: var(--sw-radius-sm) var(--sw-radius-sm) 0 0;
+  color: var(--sw-text-muted);
+  transition: color var(--sw-transition);
+}
+.nav-tabs .nav-link.active {
+  color: var(--sw-primary);
+  font-weight: 600;
+}
+
+/* === Buttons === */
+.btn-primary {
+  background: var(--sw-primary);
+  border-color: var(--sw-primary);
+  transition: background var(--sw-transition);
+}
+.btn-primary:hover {
+  background: var(--sw-primary-dark);
+  border-color: var(--sw-primary-dark);
+}
+
+/* === Footer === */
+footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sw-border);
+  color: var(--sw-text-muted);
+}
+
+/* === Modals === */
+.modal-content {
+  border: none;
+  border-radius: var(--sw-radius);
+  box-shadow: var(--sw-shadow-md);
+}
+
+/* === Form controls === */
+.form-control {
+  border-color: var(--sw-border);
+  border-radius: var(--sw-radius-sm);
+  transition: border-color var(--sw-transition), box-shadow var(--sw-transition);
+}
+.form-control:focus {
+  border-color: var(--sw-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* === Pagination === */
 ul.pagination .page-item .page-link {
-    border-color: #aaaaaa !important;
-    color: #888;
+  border-color: var(--sw-border);
+  color: var(--sw-text-muted);
 }
 ul.pagination .page-item.disabled .page-link {
-    border-color: #dee2e6 !important;
-    color: #aaa;
+  border-color: #dee2e6;
+  color: #aaa;
 }
 
-/* SQL History Dropdown */
+/* === Headings === */
+h1 > small { font-size: 50%; }
+
+/* === SQL History Dropdown === */
 #sql-history-dropdown {
-    min-width: 220px;
-    max-width: min(400px, calc(100vw - 2rem));
+  min-width: 220px;
+  max-width: min(400px, calc(100vw - 2rem));
 }
 .sql-history-text {
-    font-family: monospace;
-    font-size: 0.85rem;
-    line-height: 1.2;
-    word-break: break-all;
+  font-family: monospace;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  word-break: break-all;
 }
 .sql-history-meta {
-    color: #6c757d;
-    font-size: 0.75rem;
-    display: block;
+  color: var(--sw-text-muted);
+  font-size: 0.75rem;
+  display: block;
 }
 .sql-history-item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 6px 8px;
-    cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  cursor: pointer;
 }
 .sql-history-item:hover {
-    background-color: #f8f9fa;
+  background-color: var(--sw-sidebar-bg);
 }
 
+/* === AI Chat Modal === */
+#ai-chat-result pre {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* === Mobile responsive === */
 @media (max-width: 575.98px) {
-    #sql-history-dropdown {
-        position: fixed !important;
-        left: 8px !important;
-        right: 8px !important;
-        top: auto !important;
-        bottom: 0 !important;
-        max-width: none;
-        width: auto;
-        max-height: 60vh !important;
-        border-radius: 8px 8px 0 0;
-        transform: none !important;
-    }
-    .sql-history-text {
-        font-size: 0.78rem;
-    }
+  #sql-history-dropdown {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: 0 !important;
+    max-width: none;
+    width: auto;
+    max-height: 60vh !important;
+    border-radius: 8px 8px 0 0;
+    transform: none !important;
+  }
+  .sql-history-text {
+    font-size: 0.78rem;
+  }
 }
 
-/* Mobile responsive styles */
 @media (max-width: 991.98px) {
-    /* Sidebar: full width on mobile */
-    #sidebar {
-        padding: 0 10px;
-        border-bottom: 1px solid #dee2e6;
-        margin-bottom: 10px;
-    }
-    #sidebar .nav {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 2px;
-    }
-    #sidebar .nav>li>a {
-        padding: 4px 8px;
-        font-size: 0.85rem;
-    }
-    /* Sidebar toggle button */
-    .sidebar-toggle {
-        width: 100%;
-        text-align: left;
-    }
-    /* Content: full width on mobile */
-    #content {
-        padding: 0 10px;
-    }
-    /* Navbar form adjustments */
-    .navbar .form-inline {
-        flex-wrap: wrap;
-        gap: 4px;
-    }
-    .navbar .form-inline .form-control {
-        max-width: 100%;
-        width: 100%;
-    }
-    /* Pagination: allow wrap on mobile */
-    .pagination {
-        flex-wrap: wrap;
-    }
-    /* Float-right elements: no float on mobile */
-    .float-right {
-        float: none !important;
-        margin-bottom: 8px;
-    }
+  #sidebar {
+    padding: 0 10px;
+    border-bottom: 1px solid var(--sw-border);
+    margin-bottom: 10px;
+    min-height: auto;
+  }
+  #sidebar .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  #sidebar .nav > li > a {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+  .sidebar-toggle {
+    width: 100%;
+    text-align: left;
+  }
+  #content {
+    padding: 0 10px;
+  }
+  .navbar .form-inline {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .navbar .form-inline .form-control {
+    max-width: 100%;
+    width: 100%;
+  }
+  .pagination {
+    flex-wrap: wrap;
+  }
+  .float-right {
+    float: none !important;
+    margin-bottom: 8px;
+  }
 }
 
 @media (max-width: 575.98px) {
-    /* Extra small screens: tighter spacing */
-    h1 { font-size: 1.4rem; }
-    h1 small { font-size: .65rem; }
-    h3 { font-size: 1.1rem; }
-    /* Nav tabs: scrollable with smaller text */
-    .nav-tabs .nav-link {
-        font-size: 0.8rem;
-        padding: 6px 8px;
-        white-space: nowrap;
-    }
-    /* Tables: smaller font */
-    .table {
-        font-size: 0.75rem;
-    }
-    /* Footer: smaller */
-    footer p {
-        font-size: 0.75rem;
-    }
+  h1 { font-size: 1.4rem; }
+  h1 small { font-size: .65rem; }
+  h3 { font-size: 1.1rem; }
+  .nav-tabs .nav-link {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+  .table {
+    font-size: 0.75rem;
+  }
+  footer p {
+    font-size: 0.75rem;
+  }
 }

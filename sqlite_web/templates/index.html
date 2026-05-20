@@ -1,6 +1,7 @@
 {% extends "base_tables.html" %}
 
 {% block content %}
+  <div class="sw-card">
   <table class="table table-striped">
     <tbody>
       <tr>
@@ -43,7 +44,8 @@
       </tr>
     </tbody>
   </table>
-  <hr />
+  </div>
+  <div class="sw-card">
   <h3>Query</h3>
   <form action="{{ url_for('generic_query') }}" method="post" role="form">
     <div class="form-group">
@@ -51,4 +53,5 @@
     </div>
     <button class="btn btn-primary" type="submit">Execute</button>
   </form>
+  </div>
 {% endblock %}

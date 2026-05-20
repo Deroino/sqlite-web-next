@@ -16,6 +16,8 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.error
+import urllib.request
 import webbrowser
 from collections import namedtuple, OrderedDict
 from functools import reduce
@@ -370,6 +372,143 @@ def settings_api():
         _save_settings(current)
         return jsonify(current)
     return jsonify(_load_settings())
+
+
+_DANGEROUS_KEYWORDS = re.compile(
+    r'\b(INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|REPLACE|ATTACH|DETACH)\b',
+    re.IGNORECASE
+)
+
+
+def _is_safe_select(sql):
+    """Validate that SQL is a single SELECT query with no modification statements."""
+    if not sql or not sql.strip():
+        return False
+    stripped = sql.strip().rstrip(';').strip()
+    if not stripped.upper().startswith('SELECT'):
+        return False
+    parts = [p.strip() for p in stripped.split(';') if p.strip()]
+    if len(parts) > 1:
+        return False
+    if _DANGEROUS_KEYWORDS.search(stripped):
+        return False
+    return True
+
+
+@app.route('/ai/tables/')
+def ai_tables():
+    """Return list of table names for @mention autocomplete."""
+    dataset = get_dataset()
+    return jsonify(sorted(dataset.tables))
+
+
+@app.route('/ai/schema/<table>/')
+def ai_schema(table):
+    """Return CREATE TABLE SQL for a specific table."""
+    dataset = get_dataset()
+    if table not in dataset.tables:
+        abort(404)
+    schema = dataset.get_table_sql(table)
+    return jsonify({'table': table, 'schema': schema or ''})
+
+
+@app.route('/ai/chat/', methods=['POST'])
+def ai_chat():
+    """Proxy chat request to OpenAI-compatible API with schema context."""
+    settings = _load_settings()
+    ai_url = settings.get('ai_url', '')
+    ai_model = settings.get('ai_model', '')
+    ai_api_key = settings.get('ai_api_key', '')
+
+    if not ai_url or not ai_model or not ai_api_key:
+        return jsonify({'error': 'AI service is not configured. Please set API URL, model, and API key in Settings.'}), 400
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid request body.'}), 400
+
+    user_message = data.get('message', '')
+    mentioned_tables = data.get('mentioned_tables', [])
+
+    dataset = get_dataset()
+    schema_context_parts = []
+    for table_name in mentioned_tables:
+        if table_name in dataset.tables:
+            schema = dataset.get_table_sql(table_name)
+            if schema:
+                schema_context_parts.append(schema)
+
+    system_prompt = (
+        "You are a SQLite query assistant. Your ONLY job is to generate a single SELECT query "
+        "based on the user's request and the provided database schema. "
+        "RULES:\n"
+        "1. Return ONLY a single SELECT query. No explanations, no markdown, no commentary.\n"
+        "2. NEVER generate INSERT, UPDATE, DELETE, ALTER, DROP, CREATE, or any DDL/DML statements.\n"
+        "3. If the user's request cannot be fulfilled with a SELECT query, respond with exactly: "
+        "\"Error: This request requires a non-SELECT operation which is not allowed.\"\n"
+        "4. Use the provided schema to write correct column names and table names.\n"
+        "5. Always include appropriate JOINs if the query spans multiple tables.\n"
+    )
+
+    if schema_context_parts:
+        system_prompt += "\n\nDatabase schema:\n" + "\n\n".join(schema_context_parts)
+
+    messages = [
+        {'role': 'system', 'content': system_prompt},
+        {'role': 'user', 'content': user_message}
+    ]
+
+    try:
+        req_body = _json.dumps({
+            'model': ai_model,
+            'messages': messages,
+            'temperature': 0.1,
+            'max_tokens': 500,
+        }).encode('utf-8')
+
+        req = urllib.request.Request(
+            ai_url,
+            data=req_body,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer %s' % ai_api_key,
+            },
+            method='POST'
+        )
+
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            resp_data = _json.loads(resp.read().decode('utf-8'))
+
+        ai_message = resp_data['choices'][0]['message']['content'].strip()
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8', errors='replace')
+        return jsonify({'error': 'AI API error (HTTP %d): %s' % (e.code, error_body)}), 502
+    except urllib.error.URLError as e:
+        return jsonify({'error': 'AI API connection error: %s' % str(e.reason)}), 502
+    except Exception as e:
+        return jsonify({'error': 'AI request failed: %s' % str(e)}), 500
+
+    # Clean markdown code fences if present
+    cleaned = ai_message.strip()
+    if cleaned.startswith('```'):
+        lines = cleaned.split('\n')
+        # Remove first line (```sql or ```) and last line (```)
+        inner_lines = []
+        for i, line in enumerate(lines):
+            if i == 0 and line.strip().startswith('```'):
+                continue
+            if i == len(lines) - 1 and line.strip() == '```':
+                continue
+            inner_lines.append(line)
+        cleaned = '\n'.join(inner_lines).strip()
+
+    if not _is_safe_select(cleaned):
+        return jsonify({
+            'error': 'AI returned an unsafe or non-SELECT query. For safety, only SELECT queries are allowed.',
+            'raw_response': ai_message
+        }), 400
+
+    return jsonify({'sql': cleaned, 'raw_response': ai_message})
 
 #
 # Flask views.

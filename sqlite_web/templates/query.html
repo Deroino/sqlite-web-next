@@ -18,6 +18,7 @@
 {% block content_title %}Query{% endblock %}
 
 {% block content %}
+  <div class="sw-card">
   <form action="." id="query-form" method="post" role="form">
     <input name="ordering" type="hidden" value="" />
     <input name="export_ordering" type="hidden" value="{% if ordering %}{{ ordering }}{% endif %}" />
@@ -51,13 +52,16 @@
       </div>
     </div>
   </form>
-  <hr />
+  </div>
 
   {% if row_count is not none and row_count >= 0 %}
+    <div class="sw-card">
     <p>Rows modified: <code>{{ row_count }}</code></p>
+    </div>
   {% endif %}
 
   {% if data_description %}
+    <div class="sw-card">
     {% if not data %}
       <p>Empty result set.</p>
     {% else %}
@@ -91,6 +95,7 @@
       </div>
       {% include "pagination.html" %}
     {% endif %}
+    </div>
   {% endif %}
   <div class="modal fade" id="sql-image-modal" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
