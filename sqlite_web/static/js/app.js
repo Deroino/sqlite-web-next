@@ -267,38 +267,21 @@ App = window.App || {};
         for (var i = 0; i < this.entries.length; i++) {
             var entry = this.entries[i];
             var resultInfo = entry.result_count != null ? ' (' + entry.result_count + ' rows)' : '';
-            var errorBadge = entry.error ? '<span class="badge badge-danger mr-1">ERR</span>' : '';
-            var displaySql = entry.sql.length > 60 ? entry.sql.substring(0, 60) + '...' : entry.sql;
+            var displaySql = entry.sql.length > 80 ? entry.sql.substring(0, 80) + '...' : entry.sql;
             var escapedSql = escapeHtml(displaySql);
             var tsDisplay = entry.timestamp ? ' \u2014 ' + entry.timestamp.substring(0, 16) : '';
 
             var elem = $(
-                '<div class="dropdown-item sql-history-item">' +
-                '<div class="sql-history-text">' + errorBadge + escapedSql + '<small class="sql-history-meta">' + tsDisplay + resultInfo + '</small></div>' +
-                '<div class="sql-history-actions">' +
-                '<button class="btn btn-sm btn-outline-primary btn-fill" data-index="' + i + '">Fill</button>' +
-                '<a class="btn btn-sm btn-outline-secondary btn-run" href="/query/?sql=' + encodeURIComponent(entry.sql) + '">Run</a>' +
-                '</div></div>'
+                '<div class="dropdown-item sql-history-item" data-index="' + i + '">' +
+                '<div class="sql-history-text">' + escapedSql + '</div>' +
+                '<small class="sql-history-meta">' + tsDisplay + resultInfo + '</small>' +
+                '</div>'
             );
 
-            elem.find('.btn-fill').on('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var idx = $(this).data('index');
-                if (self.sqlTextarea.length) {
-                    self.sqlTextarea.val(self.entries[idx].sql);
-                    self.sqlTextarea.focus();
-                    $('#sql-history-dropdown').dropdown('toggle');
-                } else {
-                    window.location.href = '/query/?sql=' + encodeURIComponent(self.entries[idx].sql);
-                }
-            });
-
-            // Click on the item itself also fills the textarea
             elem.on('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                var idx = $(this).find('.btn-fill').data('index');
+                var idx = $(this).data('index');
                 if (self.sqlTextarea.length) {
                     self.sqlTextarea.val(self.entries[idx].sql);
                     self.sqlTextarea.focus();

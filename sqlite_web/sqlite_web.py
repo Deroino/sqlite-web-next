@@ -564,9 +564,9 @@ def _query_view(template, table=None):
         if pk and not is_composite_pk and pk.column_name in col_names:
             pk_index = col_names.index(pk.column_name)
 
-    # Record query in history
-    if sql:
-        _record_query_history(sql, row_count, error)
+    # Record query in history (skip failed queries)
+    if sql and not error:
+        _record_query_history(sql, row_count)
 
     return render_template(
         template,

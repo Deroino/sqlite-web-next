@@ -46,18 +46,6 @@ ul.pagination .page-item.disabled .page-link {
 .sql-history-item:hover {
     background-color: #f8f9fa;
 }
-.sql-history-actions {
-    display: flex;
-    gap: 4px;
-    margin-top: 4px;
-}
-.sql-history-actions .btn {
-    font-size: 0.7rem;
-    padding: 1px 6px;
-}
-.sql-history-actions .btn-run {
-    text-decoration: none;
-}
 
 @media (max-width: 575.98px) {
     #sql-history-dropdown {
@@ -112,18 +100,9 @@ ul.pagination .page-item.disabled .page-link {
         max-width: 100%;
         width: 100%;
     }
-    .navbar .btn-group.ml-2 {
-        margin-left: 0 !important;
-        margin-top: 4px;
-    }
     /* Pagination: allow wrap on mobile */
     .pagination {
         flex-wrap: wrap;
-    }
-    /* Query form buttons: wrap on small screens */
-    #query-form .btn,
-    form .btn {
-        margin-bottom: 4px;
     }
     /* Float-right elements: no float on mobile */
     .float-right {
