@@ -74,6 +74,8 @@ from playhouse.dataset import DataSet
 from playhouse.migrate import migrate
 
 
+import json as _json
+
 CUR_DIR = os.path.realpath(os.path.dirname(__file__))
 DEBUG = False
 
@@ -82,6 +84,31 @@ ROWS_PER_PAGE = 50
 QUERY_ROWS_PER_PAGE = 1000
 TRUNCATE_VALUES = True
 SECRET_KEY = 'sqlite-database-browser-0.1.0'
+
+_SETTINGS_PATH = os.path.join(tempfile.gettempdir(), 'sqlite_web_settings.json')
+_SETTINGS_DEFAULTS = {
+    'title': 'sqlite-web',
+    'safe_query': True,
+    'ai_url': '',
+    'ai_model': '',
+    'ai_api_key': '',
+}
+
+def _load_settings():
+    """Load settings from JSON file, falling back to defaults."""
+    try:
+        with open(_SETTINGS_PATH, 'r') as f:
+            saved = _json.load(f)
+        merged = dict(_SETTINGS_DEFAULTS)
+        merged.update(saved)
+        return merged
+    except (IOError, OSError, _json.JSONDecodeError):
+        return dict(_SETTINGS_DEFAULTS)
+
+def _save_settings(settings):
+    """Save settings to JSON file."""
+    with open(_SETTINGS_PATH, 'w') as f:
+        _json.dump(settings, f, indent=2)
 
 app = Flask(
     __name__,
@@ -329,6 +356,21 @@ def history_delete(entry_id):
         flash('Error: %s' % str(exc), 'danger')
     return redirect(request.referrer or url_for('generic_query'))
 
+@app.route('/settings/', methods=['GET', 'POST'])
+def settings_api():
+    """API endpoint for getting and saving application settings."""
+    if request.method == 'POST':
+        current = _load_settings()
+        for key in _SETTINGS_DEFAULTS:
+            if key in request.form:
+                val = request.form[key]
+                if key == 'safe_query':
+                    val = val.lower() in ('true', '1', 'on')
+                current[key] = val
+        _save_settings(current)
+        return jsonify(current)
+    return jsonify(_load_settings())
+
 #
 # Flask views.
 #
@@ -485,6 +527,13 @@ def _query_view(template, table=None):
                 (sql.rstrip(' ;'), abs(ordering), direction))
     else:
         ordering = None
+
+    # Safe query: append LIMIT 50 if enabled and user SQL has no LIMIT.
+    safe_query = _load_settings().get('safe_query', True)
+    if safe_query and sql:
+        # Check if the original SQL already contains a LIMIT clause.
+        if not re.search(r'\bLIMIT\b', sql, re.IGNORECASE):
+            qsql = 'SELECT * FROM (%s) AS _ LIMIT 50' % (qsql or sql).rstrip(' ;')
 
     if table:
         default_sql = 'SELECT * FROM "%s"' % table
@@ -1435,6 +1484,7 @@ def get_query_images():
 
 @app.context_processor
 def _general():
+    settings = _load_settings()
     return {
         'dataset': get_dataset(),
         'datasets': datasets,
@@ -1442,6 +1492,8 @@ def _general():
         'enable_filesystem': app.config.get('ENABLE_FILESYSTEM'),
         'login_required': bool(app.config.get('PASSWORD')),
         'version': __version__,
+        'app_title': settings.get('title', 'sqlite-web'),
+        'safe_query': settings.get('safe_query', True),
     }
 
 @app.context_processor
