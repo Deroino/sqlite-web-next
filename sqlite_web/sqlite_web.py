@@ -26,6 +26,7 @@ from getpass import getpass
 from io import StringIO
 from io import TextIOWrapper
 from logging.handlers import WatchedFileHandler
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.routing import BaseConverter
 from werkzeug.utils import secure_filename
 
@@ -117,6 +118,7 @@ app = Flask(
     static_folder=os.path.join(CUR_DIR, 'static'),
     template_folder=os.path.join(CUR_DIR, 'templates'))
 app.config.from_object(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 datasets = {}
 dataset_config = {}
 
@@ -1843,7 +1845,7 @@ def install_auth_handler(password):
         if not session.get('authorized') and request.path != '/login/' and \
            not request.path.startswith(('/static/', '/favicon')):
             flash('You must log-in to view the database browser.', 'danger')
-            session['next_url'] = request.base_url
+            session['next_url'] = request.url
             return redirect(url_for('login'))
 
 def initialize_dataset(filename):
