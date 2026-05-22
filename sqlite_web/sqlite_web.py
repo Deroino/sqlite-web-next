@@ -1632,6 +1632,7 @@ def _general():
         'enable_load': app.config.get('ENABLE_LOAD'),
         'enable_filesystem': app.config.get('ENABLE_FILESYSTEM'),
         'login_required': bool(app.config.get('PASSWORD')),
+        'is_authorized': session.get('authorized', False),
         'version': __version__,
         'app_title': settings.get('title', 'sqlite-web'),
         'safe_query': settings.get('safe_query', True),

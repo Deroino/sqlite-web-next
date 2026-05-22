@@ -13,10 +13,12 @@
     {% block extra_head %}{% endblock %}
     <script src="{{ url_for('static', filename='js/jquery-1.11.0.min.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    {% if is_authorized %}
     <script src="{{ url_for('static', filename='js/bookmarks.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/history.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/settings.js') }}" type="text/javascript"></script>
     <script src="{{ url_for('static', filename='js/ai-chat.js') }}" type="text/javascript"></script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/app.js') }}" type="text/javascript"></script>
     <script type="text/javascript">
       $(function() {
@@ -100,8 +102,10 @@
       {% endblock %}
     </nav>
 
+    {% if is_authorized %}
     {% include '_settings_modal.html' %}
     {% include '_ai_chat_modal.html' %}
+    {% endif %}
 
     <div class="container-fluid">
       <div class="row">
