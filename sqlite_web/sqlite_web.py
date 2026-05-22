@@ -522,14 +522,22 @@ def index():
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
+    app.logger.info('[login] method=%s path=%s', request.method, request.path)
     if request.method == 'POST':
+        app.logger.info('[login] POST received, checking password')
         if request.form.get('password') == app.config['PASSWORD']:
             session['authorized'] = True
-            return redirect(session.get('next_url') or url_for('index'))
+            next_url = session.get('next_url') or url_for('index')
+            app.logger.info('[login] password correct, redirecting to %s', next_url)
+            return redirect(next_url)
+        app.logger.info('[login] password incorrect')
         flash('The password you entered is incorrect.', 'danger')
         app.logger.debug('Received incorrect password attempt from %s' %
                          request.remote_addr)
-    return render_template('login.html')
+    app.logger.info('[login] rendering login page')
+    result = render_template('login.html')
+    app.logger.info('[login] render_template done')
+    return result
 
 @app.route('/logout/', methods=['GET'])
 def logout():
@@ -1644,16 +1652,23 @@ def _now():
 
 @app.before_request
 def _connect_db():
+    app.logger.info('[before_request] _connect_db start path=%s method=%s', request.path, request.method)
     dataset = get_dataset()
+    app.logger.info('[before_request] get_dataset done, calling connect()')
     dataset.connect()
+    app.logger.info('[before_request] connect() done')
     if dataset_config.get('startup_hook'):
         dataset_config['startup_hook'](dataset._database)
 
 @app.teardown_request
 def _close_db(exc):
+    app.logger.info('[teardown] _close_db start exc=%s', exc)
     dataset = get_dataset()
     if not dataset._database.is_closed():
         dataset.close()
+        app.logger.info('[teardown] dataset closed')
+    else:
+        app.logger.info('[teardown] dataset already closed')
 
 
 class PrefixMiddleware(object):
@@ -1843,11 +1858,13 @@ def install_auth_handler(password):
 
     @app.before_request
     def check_password():
+        app.logger.info('[before_request] check_password start path=%s authorized=%s', request.path, session.get('authorized'))
         if not session.get('authorized') and request.path != '/login/' and \
            not request.path.startswith(('/static/', '/favicon')):
             flash('You must log-in to view the database browser.', 'danger')
             session['next_url'] = request.url
             return redirect(url_for('login'))
+        app.logger.info('[before_request] check_password passed')
 
 def initialize_dataset(filename):
     dataset_kw = {}
@@ -1925,6 +1942,8 @@ def configure_app():
     if options.quiet:
         app.logger.setLevel(logging.ERROR)
         werkzeug_logger.setLevel(logging.ERROR)
+    else:
+        app.logger.setLevel(logging.INFO)
 
     password = None
     if options.prompt_password:

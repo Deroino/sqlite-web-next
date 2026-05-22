@@ -35,7 +35,7 @@ def main():
 
     print('Serving on %s:%s' % bind_address)
 
-    server = WSGIServer(bind_address, app, log=None, spawn=pool,
+    server = WSGIServer(bind_address, app, log=sys.stdout, spawn=pool,
                         **server_kwargs)
     server.serve_forever()
 
