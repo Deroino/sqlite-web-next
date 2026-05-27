@@ -10,6 +10,7 @@ App = window.App || {};
         this.resultArea = this.modal.find('#ai-chat-result');
         this.useQueryBtn = this.modal.find('#ai-use-query');
         this.loadingIndicator = this.modal.find('#ai-chat-loading');
+        this.mentionsArea = this.modal.find('#ai-mentioned-tables');
         this.tables = [];
         this.mentionedTables = [];
         this.generatedSQL = '';
@@ -22,11 +23,16 @@ App = window.App || {};
         var self = this;
         $.getJSON('/ai/tables/', function(data) {
             self.tables = data;
+            self.refreshMentions();
         });
     };
 
     AIChat.prototype.bindHandlers = function() {
         var self = this;
+
+        this.input.on('input', function() {
+            self.refreshMentions();
+        });
 
         // Send on Enter (Shift+Enter for newline)
         this.input.on('keydown', function(e) {
@@ -53,6 +59,7 @@ App = window.App || {};
             self.input.val('');
             self.generatedSQL = '';
             self.mentionedTables = [];
+            self.mentionsArea.empty().hide();
         });
 
         // Refresh tables when modal opens
@@ -80,12 +87,47 @@ App = window.App || {};
         return mentioned;
     };
 
+    AIChat.prototype.refreshMentions = function() {
+        var mentioned = this.detectMentions(this.input.val());
+        this.mentionedTables = mentioned;
+
+        if (!mentioned.length) {
+            this.mentionsArea.empty().hide();
+            return;
+        }
+
+        var html = '<span class="text-muted mr-2">Detected tables:</span>';
+        for (var i = 0; i < mentioned.length; i++) {
+            html += '<span class="badge badge-info mr-1">@' + $('<span>').text(mentioned[i]).html() + '</span>';
+        }
+        this.mentionsArea.html(html).show();
+    };
+
+    AIChat.prototype.renderResponse = function(payload) {
+        var content = payload.raw_response || payload.sql || payload.error || 'No response.';
+        var isError = !!payload.error && !payload.sql;
+        var sql = payload.sql || '';
+
+        if (sql) {
+            this.generatedSQL = sql;
+            this.useQueryBtn.show();
+        } else {
+            this.generatedSQL = '';
+            this.useQueryBtn.hide();
+        }
+
+        var klass = isError ? 'alert alert-warning mb-0' : 'alert alert-secondary mb-0';
+        var label = payload.error ? '<div class="mb-2 font-weight-bold">AI response</div>' : '';
+        var body = $('<div>').text(content).html();
+        this.resultArea.html('<div class="' + klass + '">' + label + '<pre class="bg-light p-3 rounded mb-0">' + body + '</pre></div>').show();
+    };
+
     AIChat.prototype.sendPrompt = function() {
         var self = this;
         var message = this.input.val().trim();
         if (!message) return;
 
-        this.mentionedTables = this.detectMentions(message);
+        this.refreshMentions();
 
         this.sendBtn.prop('disabled', true);
         this.loadingIndicator.show();
@@ -103,31 +145,19 @@ App = window.App || {};
             success: function(data) {
                 self.sendBtn.prop('disabled', false);
                 self.loadingIndicator.hide();
-                if (data.sql) {
-                    self.generatedSQL = data.sql;
-                    self.resultArea.html(
-                        '<pre class="bg-light p-3 rounded mb-0">' +
-                        $('<span>').text(data.sql).html() +
-                        '</pre>'
-                    ).show();
-                    self.useQueryBtn.show();
-                } else if (data.error) {
-                    self.resultArea.html(
-                        '<div class="alert alert-warning mb-0">' + $('<span>').text(data.error).html() + '</div>'
-                    ).show();
-                }
+                self.renderResponse(data);
             },
             error: function(xhr) {
                 self.sendBtn.prop('disabled', false);
                 self.loadingIndicator.hide();
-                var errorMsg = 'Request failed.';
+                var resp = {};
                 try {
-                    var resp = JSON.parse(xhr.responseText);
-                    errorMsg = resp.error || errorMsg;
+                    resp = JSON.parse(xhr.responseText);
                 } catch(e) {}
-                self.resultArea.html(
-                    '<div class="alert alert-danger mb-0">' + $('<span>').text(errorMsg).html() + '</div>'
-                ).show();
+                self.renderResponse({
+                    error: resp.error || 'Request failed.',
+                    raw_response: resp.raw_response || resp.error || 'Request failed.'
+                });
             }
         });
     };

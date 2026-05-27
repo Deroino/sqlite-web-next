@@ -450,15 +450,14 @@ def ai_chat():
                 schema_context_parts.append(schema)
 
     system_prompt = (
-        "You are a SQLite query assistant. Your ONLY job is to generate a single SELECT query "
-        "based on the user's request and the provided database schema. "
+        "You are a SQLite query assistant. Generate SQLite SQL for the user's request "
+        "based on the provided database schema. "
         "RULES:\n"
-        "1. Return ONLY a single SELECT query. No explanations, no markdown, no commentary.\n"
-        "2. NEVER generate INSERT, UPDATE, DELETE, ALTER, DROP, CREATE, or any DDL/DML statements.\n"
-        "3. If the user's request cannot be fulfilled with a SELECT query, respond with exactly: "
-        "\"Error: This request requires a non-SELECT operation which is not allowed.\"\n"
-        "4. Use the provided schema to write correct column names and table names.\n"
-        "5. Always include appropriate JOINs if the query spans multiple tables.\n"
+        "1. Return the SQL directly when possible. Avoid markdown and extra commentary.\n"
+        "2. You may generate SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, PRAGMA, or other SQLite statements when requested.\n"
+        "3. Use the provided schema to write correct column names and table names.\n"
+        "4. Always include appropriate JOINs if the query spans multiple tables.\n"
+        "5. For destructive statements, include precise WHERE clauses when applicable.\n"
     )
 
     if schema_context_parts:
@@ -512,12 +511,6 @@ def ai_chat():
                 continue
             inner_lines.append(line)
         cleaned = '\n'.join(inner_lines).strip()
-
-    if not _is_safe_select(cleaned):
-        return jsonify({
-            'error': 'AI returned an unsafe or non-SELECT query. For safety, only SELECT queries are allowed.',
-            'raw_response': ai_message
-        }), 400
 
     return jsonify({'sql': cleaned, 'raw_response': ai_message})
 

@@ -9,9 +9,10 @@
         </button>
       </div>
       <div class="modal-body">
-        <p class="text-muted small">Describe what you want to query. Use <code>@table_name</code> to include table schema as context.</p>
+        <p class="text-muted small">Describe the SQL you want to generate. Use <code>@table_name</code> to include table schema as context. Review non-SELECT statements before running them.</p>
         <div class="form-group">
-          <textarea class="form-control" id="ai-chat-input" rows="3" placeholder="e.g., Show me all users who signed up this month @users"></textarea>
+          <textarea class="form-control" id="ai-chat-input" rows="3" placeholder="e.g., Create an index for users by email @users"></textarea>
+          <small class="form-text text-muted" id="ai-mentioned-tables" style="display:none;"></small>
         </div>
         <div id="ai-chat-loading" style="display:none;" class="text-center py-3">
           <div class="spinner-border spinner-border-sm text-primary" role="status">
