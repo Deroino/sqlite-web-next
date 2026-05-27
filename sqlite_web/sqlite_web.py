@@ -397,6 +397,15 @@ def _is_safe_select(sql):
     return True
 
 
+def _split_sql_statements(sql):
+    return [part.strip() for part in sql.split(';') if part.strip()]
+
+
+def _query_returns_rows(sql):
+    stripped = sql.lstrip().upper()
+    return stripped.startswith(('SELECT', 'WITH', 'PRAGMA', 'EXPLAIN'))
+
+
 @app.route('/ai/tables/')
 def ai_tables():
     """Return list of table names for @mention autocomplete."""
@@ -657,7 +666,9 @@ def _query_view(template, table=None):
     ordering = None
     pk_index = None
 
-    sql = qsql = request.values.get('sql') or ''
+    sql = request.values.get('sql') or ''
+    statements = _split_sql_statements(sql)
+    qsql = statements[-1] if statements else ''
 
     if 'export_json' in request.values:
         ordering = request.values.get('export_ordering')
@@ -669,20 +680,19 @@ def _query_view(template, table=None):
         ordering = request.values.get('ordering')
         export_format = None
 
-    if ordering:
+    if ordering and qsql and _query_returns_rows(qsql):
         ordering = int(ordering)
         direction = 'DESC' if ordering < 0 else 'ASC'
         qsql = ('SELECT * FROM (%s) AS _ ORDER BY %d %s' %
-                (sql.rstrip(' ;'), abs(ordering), direction))
+                (qsql.rstrip(' ;'), abs(ordering), direction))
     else:
         ordering = None
 
-    # Safe query: append LIMIT 50 if enabled and user SQL has no LIMIT.
+    # Safe query: append LIMIT 50 if enabled and the final result query has no LIMIT.
     safe_query = _load_settings().get('safe_query', True)
-    if safe_query and sql:
-        # Check if the original SQL already contains a LIMIT clause.
-        if not re.search(r'\bLIMIT\b', sql, re.IGNORECASE):
-            qsql = 'SELECT * FROM (%s) AS _ LIMIT 50' % (qsql or sql).rstrip(' ;')
+    if safe_query and qsql and _query_returns_rows(qsql):
+        if not re.search(r'\bLIMIT\b', qsql, re.IGNORECASE):
+            qsql = 'SELECT * FROM (%s) AS _ LIMIT 50' % qsql.rstrip(' ;')
 
     if table:
         default_sql = 'SELECT * FROM "%s"' % table
@@ -715,52 +725,80 @@ def _query_view(template, table=None):
 
     page = page_next = page_prev = page_start = page_end = total_pages = 1
     total = -1  # Number of rows in query result.
-    if qsql:
-        if export_format:
-            query = model_class.raw(qsql).dicts()
-            return export(query, export_format, table)
-
+    has_result_set = False
+    prefix_statements = statements[:-1]
+    for statement in prefix_statements:
         try:
-            total, = dataset.query('SELECT COUNT(*) FROM (%s) as _' %
-                                   qsql.rstrip('; ')).fetchone()
-        except Exception as exc:
-            total = -1
-
-        # Apply pagination.
-        rpp = app.config['QUERY_ROWS_PER_PAGE']
-        page = request.values.get('page')
-        if page and page.isdigit():
-            page = max(int(page), 1)
-        else:
-            page = 1
-        offset = (page - 1) * rpp
-        page_prev, page_next = max(page - 1, 1), page + 1
-
-        # Figure out highest page.
-        if total > 0:
-            total_pages = max(1, int(math.ceil(total / float(rpp))))
-            page = max(min(page, total_pages), 1)
-            page_next = min(page + 1, total_pages)
-            page_start = offset + 1
-            page_end = min(total, page_start + rpp - 1)
-
-        qsql = ('SELECT * FROM (%s) AS _ LIMIT %d OFFSET %d' %
-                (qsql.rstrip(' ;'), rpp, offset))
-
-        try:
-            cursor = dataset.query(qsql)
+            cursor = dataset.query(statement)
         except Exception as exc:
             error = str(exc)
             app.logger.exception('Error in user-submitted query.')
+            break
         else:
-            data = cursor.fetchmany(rpp)
-            data_description = cursor.description
-            row_count = cursor.rowcount
+            if cursor.rowcount >= 0:
+                row_count = (row_count or 0) + cursor.rowcount
+
+    if qsql and not error:
+        if not _query_returns_rows(qsql):
+            try:
+                cursor = dataset.query(qsql)
+            except Exception as exc:
+                error = str(exc)
+                app.logger.exception('Error in user-submitted query.')
+            else:
+                row_count = (row_count or 0) + max(cursor.rowcount, 0)
+        elif export_format:
+            query = model_class.raw(qsql).dicts()
+            return export(query, export_format, table)
+        else:
+            has_result_set = True
+            try:
+                total, = dataset.query('SELECT COUNT(*) FROM (%s) as _' %
+                                       qsql.rstrip('; ')).fetchone()
+            except Exception as exc:
+                total = -1
+
+            # Apply pagination.
+            rpp = app.config['QUERY_ROWS_PER_PAGE']
+            page = request.values.get('page')
+            if page and page.isdigit():
+                page = max(int(page), 1)
+            else:
+                page = 1
+            offset = (page - 1) * rpp
+            page_prev, page_next = max(page - 1, 1), page + 1
+
+            # Figure out highest page.
+            if total > 0:
+                total_pages = max(1, int(math.ceil(total / float(rpp))))
+                page = max(min(page, total_pages), 1)
+                page_next = min(page + 1, total_pages)
+                page_start = offset + 1
+                page_end = min(total, page_start + rpp - 1)
+
+            qsql = ('SELECT * FROM (%s) AS _ LIMIT %d OFFSET %d' %
+                    (qsql.rstrip(' ;'), rpp, offset))
+
+            try:
+                cursor = dataset.query(qsql)
+            except Exception as exc:
+                error = str(exc)
+                app.logger.exception('Error in user-submitted query.')
+            else:
+                data = cursor.fetchmany(rpp)
+                data_description = cursor.description
+                if cursor.rowcount >= 0:
+                    row_count = cursor.rowcount
 
     if data_description is not None and table:
         col_names = [r[0] for r in data_description]
         if pk and not is_composite_pk and pk.column_name in col_names:
             pk_index = col_names.index(pk.column_name)
+
+    if not has_result_set and error is None and qsql and not _query_returns_rows(qsql):
+        data = []
+        data_description = None
+        total = -1
 
     # Record query in history (skip failed queries)
     if sql and not error:
