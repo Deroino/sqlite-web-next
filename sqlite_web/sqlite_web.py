@@ -88,7 +88,7 @@ QUERY_ROWS_PER_PAGE = 1000
 TRUNCATE_VALUES = True
 SECRET_KEY = 'sqlite-database-browser-0.1.0'
 
-_SETTINGS_PATH = os.path.join(tempfile.gettempdir(), 'sqlite_web_settings.json')
+_SETTINGS_PATH = '/data/sqlite_web_settings.json'
 _SETTINGS_DEFAULTS = {
     'title': 'sqlite-web',
     'safe_query': True,
